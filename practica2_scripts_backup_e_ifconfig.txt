@@ -1,0 +1,102 @@
+==================================================
+LABORATORIO MODULO 3 - PRACTICA 2: SCRIPTS DE BACKUP E IFCONFIG
+==================================================
+Estudiante: Elianny Adames Reyes
+Matricula: 2025-0771
+Carrera: Seguridad Informatica
+Institucion: ITLA - Instituto Tecnologico de Las Americas
+Materia: Sistemas Operativos III
+Profesor: Onel Luis Pelegrino
+Sistema operativo: Kali Linux (maquina virtual)
+
+--------------------------------------------------
+OBJETIVO
+--------------------------------------------------
+Crear dos scripts de Bash:
+1. Un backup comprimido con tar de la carpeta /home/(usuario), con la
+   fecha y hora actual en el nombre (dd-mm-yyyy:hh:mm).
+2. Un script que guarde el resultado de ifconfig en un archivo en el
+   escritorio, preguntando el nombre del archivo.
+
+NOTA: si el escritorio esta en espanol, la carpeta es "Escritorio"; en
+ingles es "Desktop" (ambos casos se contemplan en el segundo script).
+
+--------------------------------------------------
+SCRIPT 1: BACKUP CON TAR (backup.sh)
+--------------------------------------------------
+mkdir -p /root/scripts
+nano /root/scripts/backup.sh
+
+Contenido:
+
+#!/bin/bash
+# Backup comprimido de la carpeta del usuario con fecha y hora
+USUARIO="elianny"
+ORIGEN="/home/$USUARIO"
+DESTINO="/root/backups"
+FECHA=$(date +"%d-%m-%Y:%H:%M")
+ARCHIVO="$DESTINO/backup_$FECHA.tar.gz"
+
+mkdir -p "$DESTINO"
+tar --force-local -czf "$ARCHIVO" "$ORIGEN" 2>/dev/null
+echo "Backup creado: $ARCHIVO"
+
+Explicacion:
+  - #!/bin/bash : indica que es un script de Bash.
+  - date +"%d-%m-%Y:%H:%M" : fecha y hora actual (dia-mes-ano:hora:min).
+  - mkdir -p : crea la carpeta de destino si no existe.
+  - tar -czf : c = crear, z = comprimir con gzip, f = nombre del archivo.
+  - --force-local : necesario porque el nombre lleva ":" y tar lo
+    confundiria con una direccion de otra maquina.
+  - El backup se guarda en /root/backups para que no se incluya a si
+    mismo dentro de /home/elianny.
+
+Ejecucion:
+chmod +x /root/scripts/backup.sh
+  -> Da permiso de ejecucion al script.
+/root/scripts/backup.sh
+ls -lh /root/backups
+  -> Muestra el archivo creado, con la fecha y hora en el nombre.
+tar --force-local -tzf /root/backups/backup_*.tar.gz | head
+  -> Lista el contenido del comprimido para comprobarlo.
+
+--------------------------------------------------
+SCRIPT 2: IFCONFIG AL ESCRITORIO (info_red.sh)
+--------------------------------------------------
+Si ifconfig no existe: apt install net-tools -y
+
+nano /root/scripts/info_red.sh
+
+Contenido:
+
+#!/bin/bash
+# Guarda el resultado de ifconfig en un archivo en el escritorio
+USUARIO="elianny"
+if [ -d "/home/$USUARIO/Escritorio" ]; then
+    ESCRITORIO="/home/$USUARIO/Escritorio"
+else
+    ESCRITORIO="/home/$USUARIO/Desktop"
+fi
+
+read -p "Con que nombre desea guardar el archivo? " NOMBRE
+ifconfig > "$ESCRITORIO/$NOMBRE.txt"
+echo "Archivo creado: $ESCRITORIO/$NOMBRE.txt"
+
+Explicacion:
+  - read -p : pregunta al usuario y guarda la respuesta en NOMBRE.
+  - ifconfig > archivo : guarda en el archivo la salida del comando.
+  - El if revisa si el escritorio se llama Escritorio o Desktop.
+
+Ejecucion:
+chmod +x /root/scripts/info_red.sh
+/root/scripts/info_red.sh
+  -> Pregunta el nombre, por ejemplo: red
+ls /home/elianny/Escritorio
+cat /home/elianny/Escritorio/red.txt
+  -> Muestra que el archivo existe y contiene el resultado de ifconfig.
+
+--------------------------------------------------
+RESULTADO
+--------------------------------------------------
+Backup comprimido creado con fecha y hora en el nombre, y archivo con la
+informacion de red creado en el escritorio con el nombre elegido.

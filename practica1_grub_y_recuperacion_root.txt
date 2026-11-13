@@ -1,0 +1,102 @@
+==================================================
+LABORATORIO MODULO 3 - PRACTICA 1: GRUB Y RECUPERACION DE CONTRASENA ROOT
+==================================================
+Estudiante: Elianny Adames Reyes
+Matricula: 2025-0771
+Carrera: Seguridad Informatica
+Institucion: ITLA - Instituto Tecnologico de Las Americas
+Materia: Sistemas Operativos III
+Profesor: Onel Luis Pelegrino
+Sistema operativo: Kali Linux (maquina virtual)
+
+--------------------------------------------------
+OBJETIVO
+--------------------------------------------------
+1. Configurar el menu de GRUB para que espere 20 segundos antes de
+   arrancar el sistema.
+2. Mostrar un metodo de recuperacion en caso de haber olvidado la
+   contrasena del usuario root.
+
+NOTA: los comandos se ejecutan como administrador. Si no se esta como
+root, se antepone "sudo".
+
+--------------------------------------------------
+PARTE 1: TIEMPO DE ESPERA DE GRUB A 20 SEGUNDOS
+--------------------------------------------------
+GRUB es el cargador de arranque: el programa que muestra el menu para
+escoger el sistema y lo inicia.
+
+grep GRUB_TIMEOUT /etc/default/grub
+  -> Muestra el tiempo de espera actual (antes del cambio).
+
+nano /etc/default/grub
+  -> Se edita el archivo de configuracion de GRUB. Las lineas quedan asi:
+
+     GRUB_TIMEOUT_STYLE=menu
+     GRUB_TIMEOUT=20
+
+  - GRUB_TIMEOUT=20 : segundos que espera el menu antes de arrancar.
+  - GRUB_TIMEOUT_STYLE=menu : fuerza que el menu se muestre.
+  Se guarda con Ctrl+O, Enter y se sale con Ctrl+X.
+
+update-grub
+  -> Regenera la configuracion de GRUB para aplicar el cambio.
+
+grep GRUB_TIMEOUT /etc/default/grub
+  -> Se comprueba que quedo en 20.
+
+reboot
+  -> Se reinicia la maquina. Al arrancar, el menu de GRUB espera 20
+     segundos (se muestra la cuenta regresiva) antes de iniciar Kali.
+
+--------------------------------------------------
+PARTE 2: RECUPERAR LA CONTRASENA DE ROOT SI SE OLVIDO
+--------------------------------------------------
+Metodo: arrancar con una shell de administrador editando la entrada de
+GRUB (init=/bin/bash). Requiere acceso fisico a la maquina o a su
+consola, y por eso es importante proteger el acceso al equipo.
+
+Pasos:
+1. Reiniciar la maquina y, cuando aparezca el menu de GRUB, seleccionar
+   la primera entrada (Kali GNU/Linux) y presionar la tecla "e" para
+   editarla.
+2. Buscar la linea que empieza con "linux" y agregar al final de esa
+   linea:
+
+     init=/bin/bash
+
+   (init=/bin/bash le dice al kernel que en lugar de iniciar el sistema
+   completo abra directamente una shell de root.)
+3. Presionar Ctrl+X (o F10) para arrancar con ese cambio.
+4. Aparece una shell como root. El sistema de archivos esta en solo
+   lectura, asi que se vuelve a montar con permisos de escritura:
+
+     mount -o remount,rw /
+
+5. Cambiar la contrasena de root:
+
+     passwd root
+
+   (se escribe la nueva contrasena dos veces).
+6. Continuar el arranque normal (cualquiera de las dos):
+
+     exec /sbin/init
+     reboot -f
+
+7. Se inicia sesion con la nueva contrasena.
+
+Observaciones:
+  - El metodo de "modo de recuperacion" (Advanced options > recovery
+    mode) no sirve en este caso, porque pide la contrasena de root para
+    entrar.
+  - Para evitar que otra persona haga esto, se puede proteger GRUB con
+    contrasena y cifrar el disco.
+  - En el menu de GRUB el teclado funciona en distribucion US, por lo
+    que algunos simbolos (como "/" y "=") pueden estar en teclas
+    distintas.
+
+--------------------------------------------------
+RESULTADO
+--------------------------------------------------
+GRUB configurado con 20 segundos de espera, y contrasena de root
+recuperada usando init=/bin/bash.
